@@ -56,19 +56,16 @@
         <section id="template">
             <h2>Prepare Template</h2>
 
+            <div id="columnsPreview" class="preview full-width"></div>
+
             <div class="two-columns sidebar">
                 <div class="column">
-                    <h3>Template Columns</h3>
-                    <div class="column-input-group">
-                        <input type="text" id="columnName" placeholder="Enter column name">
-                        <button onclick="addColumn()" class="add-column-btn">Add</button>
-                    </div>
-                    <div id="columnsPreview" class="preview"></div>
+                    <h3>Columns (separated by commas)</h3>
+                    <input type="text" id="columnName" placeholder="Column1, Column2, Column3">
                 </div>
 
                 <div class="column">
-                    <h3>Download</h3>
-                    <button onclick="createTemplate()" class="process-btn download-btn">Download Template</button>
+                    <button onclick="createTemplate()" class="process-btn download-btn">Download</button>
                 </div>
             </div>
         </section>

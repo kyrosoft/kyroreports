@@ -1,5 +1,4 @@
 // Template Creator
-let templateColumns = [];
 
 // Status bar functions
 function showStatus(message, type = 'info') {
@@ -23,73 +22,56 @@ function showStatus(message, type = 'info') {
     }
 }
 
-function addColumn() {
+function parseColumns() {
     const input = document.getElementById('columnName');
-    const columnName = input.value.trim();
+    const value = input.value.trim();
 
-    if (!columnName) {
-        showStatus('Please enter a column name', 'error');
-        return;
-    }
+    if (!value) return [];
 
-    if (templateColumns.includes(columnName)) {
-        showStatus('Column already exists', 'error');
-        return;
-    }
-
-    templateColumns.push(columnName);
-    input.value = '';
-    renderColumnsPreview();
-    showStatus(`Column "${columnName}" added`, 'success');
+    return value.split(',')
+        .map(col => col.trim())
+        .filter(col => col.length > 0);
 }
 
-function removeColumn(index) {
-    const removed = templateColumns.splice(index, 1);
-    renderColumnsPreview();
-    showStatus(`Column "${removed[0]}" removed`, 'success');
-}
-
-function renderColumnsPreview() {
+function updatePreview() {
+    const columns = parseColumns();
     const container = document.getElementById('columnsPreview');
 
-    if (templateColumns.length === 0) {
-        container.innerHTML = '<p class="info-text-small">Add columns to see preview</p>';
+    if (columns.length === 0) {
+        container.innerHTML = '<p class="info-text-small">Type column names separated by commas to see preview</p>';
         return;
     }
 
     let html = '<table><thead><tr>';
-    templateColumns.forEach(col => {
+    columns.forEach(col => {
         html += `<th>${col}</th>`;
     });
     html += '</tr></thead><tbody><tr>';
-    templateColumns.forEach(() => {
+    columns.forEach(() => {
         html += '<td>[data]</td>';
     });
     html += '</tr></tbody></table>';
 
     // Show column count
-    html += `<p class="info-text-small">${templateColumns.length} column(s)</p>`;
+    html += `<p class="info-text-small">${columns.length} column(s)</p>`;
 
     container.innerHTML = html;
 }
 
-// Allow Enter key to add column
+// Initialize preview and add event listener
 document.addEventListener('DOMContentLoaded', () => {
     const columnNameInput = document.getElementById('columnName');
     if (columnNameInput) {
-        columnNameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addColumn();
-            }
-        });
+        columnNameInput.addEventListener('input', updatePreview);
+        // Initial render
+        updatePreview();
     }
-
-    // Initial render
-    renderColumnsPreview();
 });
 
 function createTemplate() {
-    if (templateColumns.length === 0) {
+    const columns = parseColumns();
+
+    if (columns.length === 0) {
         showStatus('Add at least one column', 'error');
         return;
     }
@@ -98,7 +80,7 @@ function createTemplate() {
     const wb = XLSX.utils.book_new();
 
     // Create data sheet with header row
-    const data = [templateColumns]; // Header row with column names
+    const data = [columns]; // Header row with column names
 
     const wsData = XLSX.utils.aoa_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, wsData, 'KyroReports');
