@@ -181,6 +181,11 @@ async function setTemplate(file) {
     document.getElementById('templateInfo').innerHTML =
         `<b>${templateFile.name}</b> (${size(templateFile.content.byteLength)})`;
     document.getElementById('templateInfo').classList.remove('hidden');
+
+    // Re-validate existing reports against the new template
+    if (reportFiles.length > 0) {
+        validateReportsAgainstTemplate();
+    }
 }
 
 
@@ -221,6 +226,11 @@ document.getElementById('reportsInput').onchange = async (e) => {
     }
 
     renderReports();
+
+    // If template exists, validate reports against it
+    if (templateFile) {
+        validateReportsAgainstTemplate();
+    }
 }
 
 function renderReports() {
@@ -233,7 +243,7 @@ function renderReports() {
         <div class="file-item ${item.valid ? 'valid' : 'invalid'}">
             <span>${item.file.name} (${size(item.file.content.byteLength)})
                 <span class="file-status ${item.valid ? 'valid' : 'invalid'}">
-                    ${item.valid ? '✓ Valid' : '✗ Invalid'}
+                    ${item.valid ? '✓ Valid' : `✗ ${item.validationError || 'Invalid'}`}
                 </span>
                 ${item.originalName ? `<small>from ${item.originalName}</small>` : ''}
             </span>
@@ -245,6 +255,60 @@ function renderReports() {
 
 function removeReport(i) {
     reportFiles.splice(i, 1);
+    renderReports();
+}
+
+// Validate reports against template and update their status
+function validateReportsAgainstTemplate() {
+    if (!templateFile || reportFiles.length === 0) return;
+
+    const templateInfo = getTemplateInfo();
+    if (!templateInfo) return;
+
+    reportFiles.forEach(report => {
+        const validation = {
+            valid: report.valid,
+            sheets: report.sheets,
+            sheetNames: report.sheetNames,
+            workbook: report.workbook
+        };
+
+        // Check if template sheet name exists in report
+        if (!validation.sheetNames.includes(templateInfo.sheetName)) {
+            report.valid = false;
+            report.validationError = `Sheet "${templateInfo.sheetName}" not found`;
+            return;
+        }
+
+        // Check columns match
+        const wb = validation.workbook;
+        const ws = wb.Sheets[templateInfo.sheetName];
+        const reportData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+        if (reportData.length === 0) {
+            report.valid = false;
+            report.validationError = 'Sheet is empty';
+            return;
+        }
+
+        const reportColumns = reportData[0];
+        const templateCols = templateInfo.columns;
+
+        // Compare columns
+        const templateColsStr = templateCols.map(c => String(c).trim()).join(',');
+        const reportColsStr = reportColumns.map(c => String(c).trim()).join(',');
+
+        if (templateColsStr !== reportColsStr) {
+            report.valid = false;
+            report.validationError = `Columns don't match template`;
+            return;
+        }
+
+        // All checks passed
+        report.valid = true;
+        delete report.validationError;
+    });
+
     renderReports();
 }
 
