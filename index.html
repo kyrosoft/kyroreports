@@ -4,75 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kyro Reports</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="navbar-brand">Kyro Reports</div>
+    </nav>
+
     <div class="container">
-        <header>
-            <h1>Kyro Reports</h1>
-            <nav>
-                <button id="tabCreator" class="active">Template Creator</button>
-                <button id="tabCompiler">Compiler</button>
-            </nav>
-        </header>
+        <section id="compile">
 
-        <main id="creatorSection">
-            <section class="section">
-                <h2>Create Template</h2>
-                <input type="text" id="templateName" placeholder="Template name">
+        <section>
+            <h2>Validate and Compile Reports</h2>
 
-                <h3>Metadata</h3>
-                <div id="metadataContainer"></div>
-                <button onclick="addMetadata()">+ Add Metadata</button>
+            <div class="two-columns">
+                <div class="column">
+                    <div class="upload-section">
+                        <h3>1. Upload Template <span class="info-text-small">(Template: .xlsx file)</span></h3>
+                        <input type="file" id="templateInput" accept=".xlsx">
+                        <div id="templateInfo" class="file-info hidden"></div>
+                    </div>
 
-                <h3>Columns</h3>
-                <div id="columnsContainer"></div>
-                <button onclick="addColumn()">+ Add Column</button>
-
-                <h3>Rows</h3>
-                <div id="rowsContainer"></div>
-                <button onclick="addRow()">+ Add Row</button>
-
-                <h3>Preview</h3>
-                <div id="preview" class="preview"></div>
-
-                <button onclick="createTemplate()">Download Template</button>
-            </section>
-        </main>
-
-        <main id="compilerSection" class="hidden">
-            <section class="section">
-                <h2>1. Upload Template</h2>
-                <div class="upload-row">
-                    <input type="file" id="templateInput" accept=".xlsx">
-                    <div id="templateInfo" class="file-info hidden"></div>
+                    <div class="upload-section">
+                        <h3>2. Upload Reports ZIP <span class="info-text-small">(Reports: .zip file containing multiple .xlsx files)</span></h3>
+                        <input type="file" id="reportsInput" accept=".zip">
+                        <div id="reportsList" class="hidden"></div>
+                        <div id="validationErrors" class="validation-errors hidden"></div>
+                    </div>
                 </div>
-            </section>
 
-            <section class="section">
-                <h2>2. Upload Reports</h2>
-                <div class="upload-row">
-                    <input type="file" id="reportsInput" accept=".xlsx">
-                    <button onclick="addReportFile()">+ Add File</button>
+                <div class="column">
+                    <h3>3. Process</h3>
+                    <button id="validateBtn" class="process-btn" disabled>Validate</button>
+                    <div id="validationSummary" class="hidden"></div>
+
+                    <button id="compileBtn" class="process-btn" disabled>Compile</button>
+                    <div id="progressSection" class="hidden">
+                        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                    </div>
+
+                    <button id="downloadBtn" class="process-btn download-btn" disabled>Download</button>
                 </div>
-                <div id="reportsList" class="hidden"></div>
-                <div id="validationErrors" class="validation-errors hidden"></div>
-            </section>
-
-            <section class="section">
-                <button id="compileBtn" class="compile-btn" disabled>Compile</button>
-            </section>
-
-            <div id="progressSection" class="hidden">
-                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
             </div>
+        </section>
 
-            <div id="downloadSection" class="download-section hidden">
-                <p>Compilation Complete!</p>
-                <button id="downloadBtn" class="download-btn">Download</button>
+        <hr>
+
+        <section id="template">
+            <h2>Prepare Template</h2>
+
+            <div class="two-columns sidebar">
+                <div class="column">
+                    <h3>Template Columns</h3>
+                    <div class="column-input-group">
+                        <input type="text" id="columnName" placeholder="Enter column name">
+                        <button onclick="addColumn()" class="add-column-btn">Add</button>
+                    </div>
+                    <div id="columnsPreview" class="preview"></div>
+                </div>
+
+                <div class="column">
+                    <h3>Download</h3>
+                    <button onclick="createTemplate()" class="process-btn download-btn">Download Template</button>
+                </div>
             </div>
-        </main>
+        </section>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+        <span id="statusMessage">Ready</span>
     </div>
 
     <script src="app.js"></script>

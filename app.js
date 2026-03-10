@@ -1,212 +1,246 @@
-// Tabs
-document.getElementById('tabCreator').onclick = () => {
-    document.getElementById('creatorSection').classList.remove('hidden');
-    document.getElementById('compilerSection').classList.add('hidden');
-    document.getElementById('tabCreator').classList.add('active');
-    document.getElementById('tabCompiler').classList.remove('active');
-};
-
-document.getElementById('tabCompiler').onclick = () => {
-    document.getElementById('compilerSection').classList.remove('hidden');
-    document.getElementById('creatorSection').classList.add('hidden');
-    document.getElementById('tabCompiler').classList.add('active');
-    document.getElementById('tabCreator').classList.remove('active');
-};
-
 // Template Creator
-function addMetadata() {
-    const container = document.getElementById('metadataContainer');
-    const div = document.createElement('div');
-    div.innerHTML = `
-        <input type="text" class="metadata-key" placeholder="Key">
-        <input type="text" class="metadata-value" placeholder="Value">
-        <button onclick="this.parentElement.remove()" style="background:#ef4444;padding:5px 10px;">×</button>
-    `;
-    container.appendChild(div);
+let templateColumns = [];
+
+// Status bar functions
+function showStatus(message, type = 'info') {
+    const statusBar = document.getElementById('statusBar');
+    const statusMessage = document.getElementById('statusMessage');
+
+    statusBar.className = 'status-bar';
+    if (type === 'error') {
+        statusBar.classList.add('error');
+    } else if (type === 'success') {
+        statusBar.classList.add('success');
+    }
+
+    statusMessage.textContent = message;
+
+    // Auto-clear after 5 seconds for info/success
+    if (type !== 'error') {
+        setTimeout(() => {
+            showStatus('Ready');
+        }, 5000);
+    }
 }
 
 function addColumn() {
-    const container = document.getElementById('columnsContainer');
-    const div = document.createElement('div');
-    div.innerHTML = `
-        <input type="text" class="column-input" placeholder="Column name">
-        <button onclick="this.parentElement.remove();updatePreview()" style="background:#ef4444;padding:5px 10px;">×</button>
-    `;
-    container.appendChild(div);
+    const input = document.getElementById('columnName');
+    const columnName = input.value.trim();
+
+    if (!columnName) {
+        showStatus('Please enter a column name', 'error');
+        return;
+    }
+
+    if (templateColumns.includes(columnName)) {
+        showStatus('Column already exists', 'error');
+        return;
+    }
+
+    templateColumns.push(columnName);
+    input.value = '';
+    renderColumnsPreview();
+    showStatus(`Column "${columnName}" added`, 'success');
 }
 
-function addRow() {
-    const container = document.getElementById('rowsContainer');
-    const div = document.createElement('div');
-    div.innerHTML = `
-        <input type="text" class="row-input" placeholder="Row label">
-        <button onclick="this.parentElement.remove();updatePreview()" style="background:#ef4444;padding:5px 10px;">×</button>
-    `;
-    container.appendChild(div);
+function removeColumn(index) {
+    const removed = templateColumns.splice(index, 1);
+    renderColumnsPreview();
+    showStatus(`Column "${removed[0]}" removed`, 'success');
 }
 
-function updatePreview() {
-    const columns = Array.from(document.querySelectorAll('.column-input')).map(i => i.value).filter(v => v.trim());
-    const rows = Array.from(document.querySelectorAll('.row-input')).map(i => i.value).filter(v => v.trim());
-    const metadata = {};
-    document.querySelectorAll('#metadataContainer > div').forEach(div => {
-        const key = div.querySelector('.metadata-key')?.value;
-        const value = div.querySelector('.metadata-value')?.value;
-        if (key && value) metadata[key] = value;
+function renderColumnsPreview() {
+    const container = document.getElementById('columnsPreview');
+
+    if (templateColumns.length === 0) {
+        container.innerHTML = '<p class="info-text-small">Add columns to see preview</p>';
+        return;
+    }
+
+    let html = '<table><thead><tr>';
+    templateColumns.forEach(col => {
+        html += `<th>${col}</th>`;
     });
+    html += '</tr></thead><tbody><tr>';
+    templateColumns.forEach(() => {
+        html += '<td>[data]</td>';
+    });
+    html += '</tr></tbody></table>';
 
-    let html = '';
+    // Show column count
+    html += `<p class="info-text-small">${templateColumns.length} column(s)</p>`;
 
-    // Metadata preview
-    if (Object.keys(metadata).length > 0) {
-        html += '<div class="preview-info"><strong>Metadata:</strong><br>';
-        for (let [k, v] of Object.entries(metadata)) {
-            html += `${k}: ${v}<br>`;
-        }
-        html += '</div>';
-    }
-
-    // Table preview
-    if (columns.length > 0 || rows.length > 0) {
-        html += '<table><thead><tr>';
-        html += '<th></th>'; // Corner cell
-        columns.forEach(col => html += `<th>${col}</th>`);
-        html += '</tr></thead><tbody>';
-
-        rows.forEach(row => {
-            html += `<tr><td><strong>${row}</strong></td>`;
-            columns.forEach(() => html += '<td>[data]</td>');
-            html += '</tr>';
-        });
-
-        html += '</tbody></table>';
-    }
-
-    document.getElementById('preview').innerHTML = html || '<p>Add columns and/or rows to see preview</p>';
+    container.innerHTML = html;
 }
 
-// Update preview when inputs change
-document.addEventListener('input', (e) => {
-    if (e.target.matches('.column-input, .row-input, .metadata-key, .metadata-value')) {
-        updatePreview();
+// Allow Enter key to add column
+document.addEventListener('DOMContentLoaded', () => {
+    const columnNameInput = document.getElementById('columnName');
+    if (columnNameInput) {
+        columnNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addColumn();
+            }
+        });
     }
+
+    // Initial render
+    renderColumnsPreview();
 });
 
-// Initial preview
-updatePreview();
-
 function createTemplate() {
-    const name = document.getElementById('templateName').value || 'template';
-    const columns = Array.from(document.querySelectorAll('.column-input')).map(i => i.value).filter(v => v.trim());
-    const rows = Array.from(document.querySelectorAll('.row-input')).map(i => i.value).filter(v => v.trim());
-    const metadata = {};
-    document.querySelectorAll('#metadataContainer > div').forEach(div => {
-        const key = div.querySelector('.metadata-key')?.value;
-        const value = div.querySelector('.metadata-value')?.value;
-        if (key && value) metadata[key] = value;
-    });
-
-    if (columns.length === 0 && rows.length === 0) {
-        alert('Add at least one column or row');
+    if (templateColumns.length === 0) {
+        showStatus('Add at least one column', 'error');
         return;
     }
 
     // Create workbook
     const wb = XLSX.utils.book_new();
 
-    // Add metadata sheet
-    if (Object.keys(metadata).length > 0) {
-        const metadataData = Object.entries(metadata).map(([k, v]) => [k, v]);
-        metadataData.unshift(['Key', 'Value']);
-        const wsMeta = XLSX.utils.aoa_to_sheet(metadataData);
-        XLSX.utils.book_append_sheet(wb, wsMeta, 'Metadata');
-    }
-
-    // Create data sheet
-    const data = [['']];
-    data[0] = [''].concat(columns); // Header row
-
-    rows.forEach(rowLabel => {
-        const rowData = [rowLabel];
-        columns.forEach(() => rowData.push(''));
-        data.push(rowData);
-    });
+    // Create data sheet with header row
+    const data = [templateColumns]; // Header row with column names
 
     const wsData = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, wsData, 'Data');
+    XLSX.utils.book_append_sheet(wb, wsData, 'KyroReports');
 
     // Download
-    XLSX.writeFile(wb, `${name}.xlsx`);
+    XLSX.writeFile(wb, 'Template - KyroReports.xlsx');
+    showStatus('Template downloaded successfully', 'success');
 }
 
-// Compiler
+// Utility to extract xlsx files from zip
+async function extractXlsxFromZip(file) {
+    const zip = new JSZip();
+    const arrayBuffer = await file.arrayBuffer();
+    const zipContent = await zip.loadAsync(arrayBuffer);
+    const xlsxFiles = [];
+
+    for (const [filename, zipEntry] of Object.entries(zipContent.files)) {
+        if (!zipEntry.dir && filename.toLowerCase().endsWith('.xlsx')) {
+            const content = await zipEntry.async('arraybuffer');
+            xlsxFiles.push({
+                name: filename,
+                content: content,
+                originalFile: file
+            });
+        }
+    }
+
+    return xlsxFiles;
+}
+
+// Validate Excel file
+function validateExcelFile(arrayBuffer) {
+    try {
+        const wb = XLSX.read(arrayBuffer, { type: 'array' });
+        return {
+            valid: wb.SheetNames.length > 0,
+            sheets: wb.SheetNames.length,
+            sheetNames: wb.SheetNames
+        };
+    } catch {
+        return { valid: false, sheets: 0, sheetNames: [] };
+    }
+}
+
+// Validate and Compile Section
 let templateFile = null;
 let reportFiles = [];
+let validationComplete = false;
+let compiledWorkbook = null;
+
+const validateBtn = document.getElementById('validateBtn');
 const compileBtn = document.getElementById('compileBtn');
+const downloadBtn = document.getElementById('downloadBtn');
 
-document.getElementById('templateInput').onchange = (e) => setTemplate(e.target.files[0]);
+document.getElementById('templateInput').onchange = async (e) => setTemplate(e.target.files[0]);
 
-function setTemplate(file) {
-    if (!file || !file.name.endsWith('.xlsx')) {
-        showValidationError('Template must be a .xlsx file');
+async function setTemplate(file) {
+    if (!file || !file.name.toLowerCase().endsWith('.xlsx')) {
+        showCompileError('Template must be a .xlsx file');
         return;
     }
-    templateFile = file;
-    document.getElementById('templateInfo').innerHTML = `<b>${file.name}</b> (${size(file.size)})`;
+
+    try {
+        const content = await file.arrayBuffer();
+        const validation = validateExcelFile(content);
+
+        if (!validation.valid) {
+            showCompileError('Invalid Excel file');
+            return;
+        }
+
+        templateFile = {
+            name: file.name,
+            content: content
+        };
+    } catch (err) {
+        showCompileError('Failed to read file');
+        return;
+    }
+
+    document.getElementById('templateInfo').innerHTML =
+        `<b>${templateFile.name}</b> (${size(templateFile.content.byteLength)})`;
     document.getElementById('templateInfo').classList.remove('hidden');
-    clearValidationErrors();
-    updateBtn();
+    clearCompileErrors();
+    updateButtons();
 }
 
-function showValidationError(msg) {
+function showCompileError(msg) {
+    showStatus(msg, 'error');
     const el = document.getElementById('validationErrors');
     el.textContent = msg;
     el.classList.remove('hidden');
 }
 
-function clearValidationErrors() {
+function clearCompileErrors() {
+    showStatus('Ready');
     document.getElementById('validationErrors').classList.add('hidden');
 }
 
 // Reports upload
-function validateReport(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const wb = XLSX.read(e.target.result, { type: 'array' });
-                resolve(wb.SheetNames.length > 0);
-            } catch {
-                resolve(false);
-            }
-        };
-        reader.onerror = () => resolve(false);
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-async function addReportFile() {
-    const input = document.getElementById('reportsInput');
-    const file = input.files[0];
+document.getElementById('reportsInput').onchange = async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.xlsx')) {
-        showValidationError(`${file.name} is not a .xlsx file`);
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+        showCompileError(`${file.name} is not a .zip file`);
         return;
     }
 
-    if (reportFiles.find(f => f.file.name === file.name)) {
-        showValidationError(`${file.name} already added`);
+    // Clear previous reports
+    reportFiles = [];
+
+    try {
+        const xlsxFiles = await extractXlsxFromZip(file);
+        if (xlsxFiles.length === 0) {
+            showCompileError(`No .xlsx files found in ${file.name}`);
+            return;
+        }
+
+        for (const xlsxFile of xlsxFiles) {
+            const validation = validateExcelFile(xlsxFile.content);
+            reportFiles.push({
+                file: xlsxFile,
+                valid: validation.valid,
+                sheets: validation.sheets,
+                sheetNames: validation.sheetNames,
+                originalName: file.name
+            });
+        }
+    } catch (err) {
+        showCompileError(`Failed to read ${file.name}`);
         return;
     }
 
-    const isValid = await validateReport(file);
-    reportFiles.push({ file, valid: isValid });
     renderReports();
-    input.value = '';
-    clearValidationErrors();
-    updateBtn();
-}
+    clearCompileErrors();
+
+    // Reset validation state when new files are added
+    validationComplete = false;
+    document.getElementById('validationSummary').classList.add('hidden');
+    updateButtons();
+};
 
 function renderReports() {
     const list = document.getElementById('reportsList');
@@ -216,10 +250,11 @@ function renderReports() {
     }
     list.innerHTML = reportFiles.map((item, i) => `
         <div class="file-item ${item.valid ? 'valid' : 'invalid'}">
-            <span>${item.file.name} (${size(item.file.size)})
+            <span>${item.file.name} (${size(item.file.content.byteLength)})
                 <span class="file-status ${item.valid ? 'valid' : 'invalid'}">
                     ${item.valid ? '✓ Valid' : '✗ Invalid'}
                 </span>
+                ${item.originalName ? `<small>from ${item.originalName}</small>` : ''}
             </span>
             <button class="file-remove" onclick="removeReport(${i})">×</button>
         </div>
@@ -230,24 +265,64 @@ function renderReports() {
 function removeReport(i) {
     reportFiles.splice(i, 1);
     renderReports();
-    updateBtn();
+
+    // Reset validation state when files are removed
+    validationComplete = false;
+    document.getElementById('validationSummary').classList.add('hidden');
+    updateButtons();
 }
 
-// Compile
-let compiledWorkbook = null;
+// Validate button
+validateBtn.onclick = () => {
+    const validCount = reportFiles.filter(r => r.valid).length;
+    const invalidCount = reportFiles.length - validCount;
 
+    let summary = `<div class="validation-summary"><h4>Validation Results</h4>`;
+    summary += `<p><strong>Total Files:</strong> ${reportFiles.length}</p>`;
+    summary += `<p style="color: #10b981;"><strong>Valid:</strong> ${validCount}</p>`;
+    summary += `<p style="color: #ef4444;"><strong>Invalid:</strong> ${invalidCount}</p>`;
+
+    if (invalidCount > 0) {
+        summary += '<p><strong>Invalid Files:</strong></p><ul>';
+        reportFiles.filter(f => !f.valid).forEach(f => {
+            summary += `<li>${f.file.name}</li>`;
+        });
+        summary += '</ul>';
+    }
+
+    summary += '<p><strong>All Files:</strong></p><ul>';
+    reportFiles.forEach(f => {
+        summary += `<li>${f.file.name} - ${f.valid ? '✓' : '✗'} (${f.sheets} sheets)</li>`;
+    });
+    summary += '</ul></div>';
+
+    document.getElementById('validationSummary').innerHTML = summary;
+    document.getElementById('validationSummary').classList.remove('hidden');
+
+    validationComplete = true;
+    updateButtons();
+
+    if (invalidCount > 0) {
+        showStatus(`Validation complete: ${validCount} valid, ${invalidCount} invalid files`, 'error');
+    } else {
+        showStatus(`Validation complete: All ${validCount} files are valid`, 'success');
+    }
+};
+
+// Compile button
 compileBtn.onclick = async () => {
+    if (!validationComplete) return;
+
     compileBtn.disabled = true;
     document.getElementById('progressSection').classList.remove('hidden');
-    document.getElementById('downloadSection').classList.add('hidden');
+    showStatus('Compiling reports...');
 
     const bar = document.getElementById('progressFill');
     const validReports = reportFiles.filter(r => r.valid);
     const total = validReports.length;
 
     // Read template
-    const templateData = await readFile(templateFile);
-    const templateWb = XLSX.read(templateData, { type: 'array' });
+    const templateWb = XLSX.read(templateFile.content, { type: 'array' });
     const newWb = XLSX.utils.book_new();
 
     // Copy template sheets
@@ -259,13 +334,13 @@ compileBtn.onclick = async () => {
     // Append data from each report
     for (let i = 0; i < total; i++) {
         const { file } = validReports[i];
-        const data = await readFile(file);
-        const wb = XLSX.read(data, { type: 'array' });
+        const wb = XLSX.read(file.content, { type: 'array' });
 
         // Add each sheet with report name prefix
         wb.SheetNames.forEach(name => {
             const ws = wb.Sheets[name];
-            const newSheetName = `${file.name.replace('.xlsx', '')} - ${name}`;
+            const baseName = file.name.replace('.xlsx', '');
+            const newSheetName = `${baseName} - ${name}`;
             XLSX.utils.book_append_sheet(newWb, ws, newSheetName);
         });
 
@@ -275,22 +350,16 @@ compileBtn.onclick = async () => {
     compiledWorkbook = newWb;
 
     document.getElementById('progressSection').classList.add('hidden');
-    document.getElementById('downloadSection').classList.remove('hidden');
     compileBtn.disabled = false;
+    updateButtons();
+    showStatus(`Compilation complete: ${total} files compiled`, 'success');
 };
 
-function readFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-document.getElementById('downloadBtn').onclick = () => {
+// Download button
+downloadBtn.onclick = () => {
     if (compiledWorkbook) {
         XLSX.writeFile(compiledWorkbook, 'compiled_reports.xlsx');
+        showStatus('Report downloaded successfully', 'success');
     }
 };
 
@@ -301,7 +370,16 @@ function size(bytes) {
     return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + units[i];
 }
 
-function updateBtn() {
-    const hasValidReports = reportFiles.some(r => r.valid);
-    compileBtn.disabled = !templateFile || !hasValidReports;
+function updateButtons() {
+    const hasTemplate = !!templateFile;
+    const hasReports = reportFiles.length > 0;
+
+    // Enable Validate when template and reports are loaded
+    validateBtn.disabled = !(hasTemplate && hasReports);
+
+    // Enable Compile when validation is complete
+    compileBtn.disabled = !validationComplete;
+
+    // Enable Download when compilation is complete
+    downloadBtn.disabled = !compiledWorkbook;
 }
