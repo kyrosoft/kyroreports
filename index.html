@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kyro Reports</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
-    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2310b981' width='100' height='100' rx='15'/><path fill='white' d='M25 30h50v8H25zm0 15h50v8H25zm0 15h35v8H25z'/></svg>">
+    <link rel="stylesheet" href="style.css?v=19">
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -39,7 +39,7 @@
                 <div id="progressSection" class="hidden">
                     <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
                 </div>
-                <button id="downloadBtn" class="process-btn download-btn">DOWNLOAD COMPILED XLSX</button>
+                <button id="downloadBtn" class="download-btn">DOWNLOAD COMPILED XLSX</button>
             </div>
         </section>
 
@@ -60,7 +60,6 @@
                 <div id="validateReportResult" class="hidden"></div>
             </div>
 
-            <button onclick="validateSingleReport()" class="process-btn download-btn">VALIDATE REPORT XLSX</button>
         </section>
 
         <hr>
@@ -72,10 +71,10 @@
                 <div id="templatePreview" class="template-preview"></div>
             </div>
 
-            <button onclick="createTemplate()" class="process-btn download-btn">DOWNLOAD TEMPLATE XLSX</button>
+            <button onclick="createTemplate()" class="download-btn">DOWNLOAD TEMPLATE XLSX</button>
         </section>
     </div>
 
-    <script src="app.js?v=16"></script>
+    <script src="app.js?v=18"></script>
 </body>
 </html>

@@ -64,15 +64,7 @@ function renderTemplate() {
         const widthStyle = `style="width: ${calculatedWidth}px;"`;
 
         html += `
-            <div class="column-input-wrapper"
-                 draggable="true"
-                 data-index="${index}"
-                 ondragstart="handleDragStart(event, ${index})"
-                 ondragover="handleDragOver(event)"
-                 ondragenter="handleDragEnter(event)"
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, ${index})"
-                 ondragend="handleDragEnd(event)">
+            <div class="column-input-wrapper">
                 <input type="text"
                        value="${col}"
                        data-index="${index}"
@@ -83,6 +75,8 @@ function renderTemplate() {
                        class="column-input-field"
                        ${widthStyle}>
                 <button onclick="removeColumn(${index})" class="column-close-btn" title="Remove column">×</button>
+                ${index > 0 ? `<button onclick="moveColumnLeft(${index})" class="column-arrow-btn left" title="Move left">←</button>` : ''}
+                ${index < columns.length - 1 ? `<button onclick="moveColumnRight(${index})" class="column-arrow-btn right" title="Move right">→</button>` : ''}
             </div>`;
     });
 
@@ -106,67 +100,23 @@ function autoResizeInput(input) {
     input.style.width = calculatedWidth + 'px';
 }
 
-// Drag and drop handlers
-let draggedIndex = null;
-
-function handleDragStart(event, index) {
-    draggedIndex = index;
-    event.target.classList.add('dragging');
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', event.target.innerHTML);
-}
-
-function handleDragOver(event) {
-    if (event.preventDefault) {
-        event.preventDefault();
-    }
-    event.dataTransfer.dropEffect = 'move';
-    return false;
-}
-
-function handleDragEnter(event) {
-    const target = event.target.closest('.column-input-wrapper');
-    if (target && draggedIndex !== null) {
-        target.classList.add('drag-over');
-    }
-}
-
-function handleDragLeave(event) {
-    const target = event.target.closest('.column-input-wrapper');
-    if (target) {
-        target.classList.remove('drag-over');
-    }
-}
-
-function handleDrop(event, dropIndex) {
-    if (event.stopPropagation) {
-        event.stopPropagation();
-    }
-
-    if (draggedIndex !== null && draggedIndex !== dropIndex) {
-        // Save any pending edits before rearranging
-        savePendingEdits();
-
-        // Rearrange the columns array
-        const draggedColumn = columns[draggedIndex];
-        columns.splice(draggedIndex, 1);
-        columns.splice(dropIndex, 0, draggedColumn);
-
-        // Re-render
+// Arrow button handlers for moving columns left/right
+function moveColumnLeft(index) {
+    if (index > 0) {
+        const temp = columns[index];
+        columns[index] = columns[index - 1];
+        columns[index - 1] = temp;
         renderTemplate();
-        showToast('Column moved', 'success');
     }
-
-    return false;
 }
 
-function handleDragEnd(event) {
-    const wrappers = document.querySelectorAll('.column-input-wrapper');
-    wrappers.forEach(wrapper => {
-        wrapper.classList.remove('dragging');
-        wrapper.classList.remove('drag-over');
-    });
-    draggedIndex = null;
+function moveColumnRight(index) {
+    if (index < columns.length - 1) {
+        const temp = columns[index];
+        columns[index] = columns[index + 1];
+        columns[index + 1] = temp;
+        renderTemplate();
+    }
 }
 
 function addColumn() {
