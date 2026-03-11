@@ -72,8 +72,10 @@ body {
 }
 
 h2 {
-    font-size: 15px;
-    margin: 8px 0 6px 0;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    color: #1e293b;
 }
 
 h3 {
@@ -85,15 +87,52 @@ hr {
     display: none;
 }
 
-/* Individual sections with darker backgrounds */
+/* Card sections */
 #compile section,
 #validate,
 #template {
-    background: #f5f5f5;
-    padding: 16px;
-    border: 1px solid #e0e0e0;
-    border-radius: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
     margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    padding: 0;
+}
+
+/* Full-width h2 header bar inside each card */
+#compile section > h2,
+#validate > h2,
+#template > h2 {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 10px 16px;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* Card body — add horizontal padding to all non-h2 children */
+#compile section > *:not(h2),
+#validate > *:not(h2),
+#template > *:not(h2) {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* Top padding on first content element */
+#compile section > *:nth-child(2),
+#validate > *:nth-child(2),
+#template > *:nth-child(2) {
+    padding-top: 14px;
+}
+
+/* Bottom padding on last content element */
+#compile section > *:last-child,
+#validate > *:last-child,
+#template > *:last-child {
+    padding-bottom: 14px;
 }
 
 .info-text {
@@ -229,7 +268,7 @@ textarea {
     flex-wrap: nowrap;
     gap: 0;
     align-items: center;
-    padding: 14px 0 2px 0;
+    padding: 0;
     min-width: max-content;
 }
 
@@ -309,15 +348,15 @@ textarea {
     position: relative;
 }
 
-/* The small + add button — same height as cells, narrow */
+/* The small + add button — slightly smaller than input cells */
 .add-column-small-btn {
     background: #10b981;
     color: white;
     border: 1px solid #059669;
     border-radius: 3px;
-    width: 28px;      /* Same as input height */
-    height: 28px;     /* Same as input height */
-    font-size: 14px;  /* Adjusted for larger button */
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
     line-height: 1;
     cursor: pointer;
     display: inline-flex;
@@ -328,7 +367,7 @@ textarea {
     margin: 0 0 0 5px;
     min-height: unset;
     transition: background 0.15s;
-    align-self: center;
+    vertical-align: middle;
 }
 
 .add-column-small-btn:hover {
@@ -558,6 +597,10 @@ button:disabled {
     margin: 8px 0;
     min-height: 32px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .progress-bar {
