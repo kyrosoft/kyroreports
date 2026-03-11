@@ -21,7 +21,7 @@
         <section id="compile">
 
         <section>
-            <h2>Validate and Compile Reports</h2>
+            <h2>Compile Reports</h2>
 
             <div class="upload-section">
                 <h3>1. Upload Template <span class="info-text-small">(Template: .xlsx file)</span></h3>
@@ -45,16 +45,37 @@
 
         <hr>
 
+        <section id="validate">
+            <h2>Validate Report</h2>
+
+            <div class="upload-section">
+                <h3>1. Upload Template <span class="info-text-small">(Template: .xlsx file)</span></h3>
+                <input type="file" id="validateTemplateInput" accept=".xlsx">
+                <div id="validateTemplateInfo" class="file-info hidden"></div>
+            </div>
+
+            <div class="upload-section">
+                <h3>2. Upload Report <span class="info-text-small">(Report: .xlsx file)</span></h3>
+                <input type="file" id="validateReportInput" accept=".xlsx">
+                <div id="validateReportResult" class="hidden"></div>
+            </div>
+
+            <button onclick="validateSingleReport()" class="process-btn download-btn">VALIDATE REPORT</button>
+        </section>
+
+        <hr>
+
         <section id="template">
             <h2>Prepare Template</h2>
 
-            <div id="columnsPreview" class="preview full-width"></div>
+            <div id="templateSection" class="template-section">
+                <div id="templatePreview" class="template-preview"></div>
+            </div>
 
-            <textarea id="columnName" rows="3" placeholder="Column1, Column2, Column3"></textarea>
             <button onclick="createTemplate()" class="process-btn download-btn">DOWNLOAD TEMPLATE XLSX</button>
         </section>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=11"></script>
 </body>
 </html>

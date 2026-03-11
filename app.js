@@ -1,4 +1,5 @@
 // Template Creator
+let columns = [];
 
 // Toast notification system
 function showToast(message, type = 'error') {
@@ -33,35 +34,64 @@ function showCompileErrors(errors) {
 }
 
 
-function parseColumns() {
-    const input = document.getElementById('columnName');
-    const value = input.value.trim();
-
-    if (!value) return [];
-
-    return value.split(',')
-        .map(col => col.trim())
-        .filter(col => col.length > 0);
+// Save pending input values before re-rendering
+function savePendingEdits() {
+    const inputs = document.querySelectorAll('.column-input');
+    inputs.forEach((input, index) => {
+        if (input && index < columns.length) {
+            const value = input.value.trim();
+            if (value) {
+                columns[index] = value;
+            }
+        }
+    });
 }
 
-function updatePreview() {
-    const columns = parseColumns();
-    const container = document.getElementById('columnsPreview');
+function renderTemplate() {
+    const container = document.getElementById('templatePreview');
 
     if (columns.length === 0) {
-        container.innerHTML = '<p class="info-text-small">Type column names separated by commas to see preview</p>';
-        return;
+        // Always show at least one empty input
+        columns.push('');
     }
 
-    let html = '<table><thead><tr>';
-    columns.forEach(col => {
-        html += `<th>${col}</th>`;
+    let html = '<div class="columns-container">';
+
+    columns.forEach((col, index) => {
+        // Calculate width based on text length (approx 8px per character + padding)
+        const textLength = col.length;
+        const calculatedWidth = Math.max(80, Math.min(200, textLength * 8 + 40));
+        const widthStyle = `style="width: ${calculatedWidth}px;"`;
+
+        html += `
+            <div class="column-input-wrapper"
+                 draggable="true"
+                 data-index="${index}"
+                 ondragstart="handleDragStart(event, ${index})"
+                 ondragover="handleDragOver(event)"
+                 ondragenter="handleDragEnter(event)"
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDrop(event, ${index})"
+                 ondragend="handleDragEnd(event)">
+                <input type="text"
+                       value="${col}"
+                       data-index="${index}"
+                       placeholder="Column ${index + 1}..."
+                       onchange="updateColumn(${index}, this.value)"
+                       onblur="updateColumn(${index}, this.value)"
+                       oninput="autoResizeInput(this)"
+                       class="column-input-field"
+                       ${widthStyle}>
+                <button onclick="removeColumn(${index})" class="column-close-btn" title="Remove column">×</button>
+            </div>`;
     });
-    html += '</tr></thead><tbody><tr>';
-    columns.forEach(() => {
-        html += '<td>[data]</td>';
-    });
-    html += '</tr></tbody></table>';
+
+    // Add the "+" button
+    html += `
+        <button onclick="addColumn()" class="add-column-small-btn" title="Add column">+</button>
+    `;
+
+    html += '</div>';
 
     // Show column count
     html += `<p class="info-text-small">${columns.length} column(s)</p>`;
@@ -69,21 +99,117 @@ function updatePreview() {
     container.innerHTML = html;
 }
 
-// Initialize preview and add event listener
-document.addEventListener('DOMContentLoaded', () => {
-    const columnNameInput = document.getElementById('columnName');
-    if (columnNameInput) {
-        columnNameInput.addEventListener('input', updatePreview);
-        // Initial render
-        updatePreview();
+// Auto-resize input based on content
+function autoResizeInput(input) {
+    const textLength = input.value.length;
+    const calculatedWidth = Math.max(80, Math.min(200, textLength * 8 + 40));
+    input.style.width = calculatedWidth + 'px';
+}
+
+// Drag and drop handlers
+let draggedIndex = null;
+
+function handleDragStart(event, index) {
+    draggedIndex = index;
+    event.target.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/html', event.target.innerHTML);
+}
+
+function handleDragOver(event) {
+    if (event.preventDefault) {
+        event.preventDefault();
     }
+    event.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(event) {
+    const target = event.target.closest('.column-input-wrapper');
+    if (target && draggedIndex !== null) {
+        target.classList.add('drag-over');
+    }
+}
+
+function handleDragLeave(event) {
+    const target = event.target.closest('.column-input-wrapper');
+    if (target) {
+        target.classList.remove('drag-over');
+    }
+}
+
+function handleDrop(event, dropIndex) {
+    if (event.stopPropagation) {
+        event.stopPropagation();
+    }
+
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+        // Save any pending edits before rearranging
+        savePendingEdits();
+
+        // Rearrange the columns array
+        const draggedColumn = columns[draggedIndex];
+        columns.splice(draggedIndex, 1);
+        columns.splice(dropIndex, 0, draggedColumn);
+
+        // Re-render
+        renderTemplate();
+        showToast('Column moved', 'success');
+    }
+
+    return false;
+}
+
+function handleDragEnd(event) {
+    const wrappers = document.querySelectorAll('.column-input-wrapper');
+    wrappers.forEach(wrapper => {
+        wrapper.classList.remove('dragging');
+        wrapper.classList.remove('drag-over');
+    });
+    draggedIndex = null;
+}
+
+function addColumn() {
+    // Save any pending edits before re-rendering
+    savePendingEdits();
+
+    // Add an empty column
+    columns.push('');
+    renderTemplate();
+
+    // Focus the new input
+    const inputs = document.querySelectorAll('.column-input-field');
+    if (inputs.length > 0) {
+        inputs[inputs.length - 1].focus();
+    }
+}
+
+function removeColumn(index) {
+    if (columns.length <= 1) {
+        showToast('You must have at least one column', 'error');
+        return;
+    }
+
+    // Save any pending edits before re-rendering
+    savePendingEdits();
+
+    columns.splice(index, 1);
+    renderTemplate();
+}
+
+function updateColumn(index, value) {
+    // Allow empty values during editing, just trim and save
+    columns[index] = value.trim();
+}
+
+// Initialize template on page load
+document.addEventListener('DOMContentLoaded', () => {
+    renderTemplate();
 });
 
 function createTemplate() {
-    const columns = parseColumns();
-
     if (columns.length === 0) {
-        showTemplateErrors(['Please define at least one column']);
+        showTemplateErrors(['Please add at least one column']);
         return;
     }
 
@@ -482,4 +608,155 @@ function size(bytes) {
     const units = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + units[i];
+}
+
+// Single Report Validation Section
+let validateTemplateFile = null;
+let validateReportFile = null;
+
+document.getElementById('validateTemplateInput').onchange = async (e) => setValidateTemplate(e.target.files[0]);
+document.getElementById('validateReportInput').onchange = async (e) => setValidateReport(e.target.files[0]);
+
+async function setValidateTemplate(file) {
+    if (!file || !file.name.toLowerCase().endsWith('.xlsx')) {
+        showToast('Template must be a .xlsx file', 'error');
+        return;
+    }
+
+    try {
+        const content = await file.arrayBuffer();
+        const validation = validateExcelFile(content);
+
+        if (!validation.valid) {
+            showToast('Invalid Excel file', 'error');
+            return;
+        }
+
+        validateTemplateFile = {
+            name: file.name,
+            content: content
+        };
+
+        document.getElementById('validateTemplateInfo').innerHTML =
+            `<b>${validateTemplateFile.name}</b> (${size(validateTemplateFile.content.byteLength)})`;
+        document.getElementById('validateTemplateInfo').classList.remove('hidden');
+
+        // Re-validate if report exists
+        if (validateReportFile) {
+            validateSingleReport();
+        }
+    } catch (err) {
+        showToast('Failed to read file', 'error');
+    }
+}
+
+async function setValidateReport(file) {
+    if (!file || !file.name.toLowerCase().endsWith('.xlsx')) {
+        showToast('Report must be a .xlsx file', 'error');
+        return;
+    }
+
+    try {
+        const content = await file.arrayBuffer();
+        const validation = validateExcelFile(content);
+
+        if (!validation.valid) {
+            showToast('Invalid Excel file', 'error');
+            return;
+        }
+
+        validateReportFile = {
+            name: file.name,
+            content: content,
+            validation: validation
+        };
+
+        // Validate against template if exists
+        if (validateTemplateFile) {
+            validateSingleReport();
+        } else {
+            showValidationResult('Please upload a template first', false);
+        }
+    } catch (err) {
+        showToast('Failed to read file', 'error');
+    }
+}
+
+function validateSingleReport() {
+    if (!validateTemplateFile) {
+        showToast('Please upload a template file first', 'error');
+        return;
+    }
+
+    if (!validateReportFile) {
+        showToast('Please upload a report file first', 'error');
+        return;
+    }
+
+    const templateInfo = getValidateTemplateInfo();
+    if (!templateInfo) {
+        showValidationResult('Template file is empty or invalid', false);
+        return;
+    }
+
+    const validation = validateReportFile.validation;
+    const errors = [];
+
+    // Check if template sheet name exists in report
+    if (!validation.sheetNames.includes(templateInfo.sheetName)) {
+        errors.push(`Sheet "${templateInfo.sheetName}" not found. Available sheets: ${validation.sheetNames.join(', ')}`);
+        showValidationResult(errors.join('<br>'), false);
+        return;
+    }
+
+    // Check columns match
+    const wb = validation.workbook;
+    const ws = wb.Sheets[templateInfo.sheetName];
+    const reportData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    if (reportData.length === 0) {
+        errors.push('Sheet is empty');
+        showValidationResult(errors.join('<br>'), false);
+        return;
+    }
+
+    const reportColumns = reportData[0];
+    const templateCols = templateInfo.columns;
+
+    // Compare columns
+    const templateColsStr = templateCols.map(c => String(c).trim()).join(',');
+    const reportColsStr = reportColumns.map(c => String(c).trim()).join(',');
+
+    if (templateColsStr !== reportColsStr) {
+        errors.push(`Columns don't match template.<br>Expected: "${templateColsStr}"<br>Found: "${reportColsStr}"`);
+        showValidationResult(errors.join('<br>'), false);
+        return;
+    }
+
+    // All checks passed
+    showValidationResult(`<b>✓ Valid</b><br>Report matches template structure`, true);
+}
+
+function getValidateTemplateInfo() {
+    if (!validateTemplateFile) return null;
+
+    const wb = XLSX.read(validateTemplateFile.content, { type: 'array' });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    if (data.length === 0) return null;
+
+    return {
+        sheetName: sheetName,
+        columns: data[0],
+        data: data
+    };
+}
+
+function showValidationResult(message, isValid) {
+    const resultDiv = document.getElementById('validateReportResult');
+    resultDiv.innerHTML = message;
+    resultDiv.className = `file-item ${isValid ? 'valid' : 'invalid'}`;
+    resultDiv.classList.remove('hidden');
 }
