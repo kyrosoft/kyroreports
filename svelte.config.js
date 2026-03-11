@@ -6,7 +6,7 @@ const config = {
     adapter: adapter(),
 
     paths: {
-      base: process.env.NODE_ENV === 'development' ? '' : '/kyroreports'
+      base: '/kyroreports'
     }
   }
 };
