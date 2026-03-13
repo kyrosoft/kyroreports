@@ -1,0 +1,49 @@
+name: Deploy SvelteKit to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Create required files
+        run: |
+          touch build/.nojekyll
+          echo -e "node_modules\n.env\n.svelte-kit\n.DS_Store" > build/.gitignore
+          echo -e "# allow crawling everything by default\nUser-agent: *\nDisallow:" > build/robots.txt
+
+      - name: Deploy to gh-pages
+        run: |
+          git config --global user.name "qyct"
+          git config --global user.email "rukmangadan.d@gmail.com"
+          cd build
+          git init -b gh-pages
+          git add -A
+          git commit -m "Deploy Leavesnap to GitHub Pages [skip ci]"
+          git push --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:gh-pages
